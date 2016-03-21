@@ -1157,6 +1157,10 @@ public class YaVersion {
   // - Initial version.
   public static final int GOOGLE_MAP_COMPONENT_VERSION = 1;
   
+  // For OPEN_STREET_MAP_COMPONENT_VERSION 1:
+  // - Initial version.
+  public static final int OPEN_STREET_MAP_COMPONENT_VERSION = 1;
+  
   public static final int SMSLOGHISTORY_COMPONENT_VERSION = 1;
 
   public static final int  SENSORDB_COMPONENT_VERSION = 1;
