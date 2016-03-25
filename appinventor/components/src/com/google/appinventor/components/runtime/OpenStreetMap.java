@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
     + "android.permission.ACCESS_NETWORK_STATE, "
     + "android.permission.INTERNET, "
     + "android.permission.WRITE_EXTERNAL_STORAGE")
-@UsesLibraries(libraries = "slf4j-android.jar,osmdroid-android.jar") // SLF4J not req for osmdroid v 5.0+
+@UsesLibraries(libraries = "slf4j-android.jar,osmdroid-android.jar,osmbonuspack.jar,commons-lang.jar,gson-2.1.jar") // SLF4J not req for osmdroid v 5.0+
 public class OpenStreetMap extends AndroidViewComponent {
 
   private final Activity context;

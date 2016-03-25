@@ -104,6 +104,8 @@
     <!--<copy toFile="${classes.files.dir}/guava-14.0.1.jar" file="${lib.dir}/guava/guava-14.0.1.jar" />-->
     <copy toFile="${classes.files.dir}/gson-2.1.jar" file="${lib.dir}/gson/gson-2.1.jar" />
     <copy toFile="${classes.files.dir}/osmdroid-android.jar" file="${lib.dir}/osmdroid/osmdroid-android-4.3.jar"/>
+    <copy toFile="${classes.files.dir}/osmbonuspack.jar" file="${lib.dir}/osmdroid/osmbonuspack-v5.1.jar"/>
+    <copy toFile="${classes.files.dir}/commons-lang.jar" file="${lib.dir}/commons-lang/commons-lang3-3.4.jar"/>
     <copy toFile="${classes.files.dir}/json.jar" file="${lib.dir}/json/json.jar" />
     <copy toFile="${classes.files.dir}/google-oauth-client-beta.jar" file="${lib.dir}/oauth/google-oauth-client-1.10.1-beta.jar" />
     <copy toFile="${classes.files.dir}/guava-14.0.1.jar" file="${lib.dir}/guava/guava-14.0.1.jar" />
