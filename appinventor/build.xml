@@ -151,8 +151,8 @@
         <pathelement location="lib/appengine/appengine-java-sdk-1.9.17/lib/impl/appengine-api-stubs.jar"/>
         <pathelement location="lib/appengine/appengine-java-sdk-1.9.17/lib/user/orm/geronimo-jpa_3.0_spec-1.1.1.jar"/>
         <!-- osmdroid libs -->
-        <pathelement location="lib/osmdroid/osmdroid-android-4.3.jar" />
-        <pathelement location="lib/osmdroid/osmbonuspack_v5.1.jar" />
+        <pathelement location="lib/osmdroid/osmdroid-android-5.1.jar" />
+        <pathelement location="lib/osmdroid/osmbonuspack_v5.7.jar" />
         <pathelement location="lib/commons-lang/commons-lang3-3.4.jar" />
         <!-- prevent error importing GitBuildId if it has been generated -->
         <pathelement location="common/build/classes/CommonVersion" />
