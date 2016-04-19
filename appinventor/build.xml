@@ -23,6 +23,9 @@
 
   <target name="comps">
     <ant inheritAll="false" useNativeBasedir="true" dir="components"/>
+    <!--
+    <ant inheritAll="false" useNativeBasedir="true" dir="buildserver" target="installplay"/>
+    -->
   </target>
 
   <target name="noplay">

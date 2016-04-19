@@ -722,7 +722,7 @@ public final class Compiler {
 
     // Include any necessary drawable items
     out.println("________Preparing drawable items");
-    if (!compiler.prepareDrawableItems(drawableDir)) {
+    if (!compiler.prepareDrawableItems(resDir)) {
       return false;
     }
     setProgress(10);
@@ -1248,19 +1248,20 @@ public final class Compiler {
   /*
    * Loads drawable assets that different components may require by default.
    */
-  private boolean prepareDrawableItems(final File drawableDir) {
+  private boolean prepareDrawableItems(final File resDir) {
     // Add the drawable items necessary for OSMdroid
+    File drawableMDPIDir = createDirectory(resDir, "drawable-mdpi");
     if (componentTypes.contains("OpenStreetMap")){
-        loadDefaultDrawableResource(drawableDir, "center.png");
-        loadDefaultDrawableResource(drawableDir, "direction_arrow.png");
-        loadDefaultDrawableResource(drawableDir, "marker_default_focused_base.png");
-        loadDefaultDrawableResource(drawableDir, "marker_default.png");
-        loadDefaultDrawableResource(drawableDir, "navto_small.png");
-        loadDefaultDrawableResource(drawableDir, "next.png");
-        loadDefaultDrawableResource(drawableDir, "person.png");
-        loadDefaultDrawableResource(drawableDir, "previous.png");
-        loadDefaultDrawableResource(drawableDir, "zoom_in.png");
-        loadDefaultDrawableResource(drawableDir, "zoom_out.png");
+        loadDefaultDrawableResource(drawableMDPIDir, "center.png");
+        loadDefaultDrawableResource(drawableMDPIDir, "direction_arrow.png");
+        loadDefaultDrawableResource(drawableMDPIDir, "marker_default_focused_base.png");
+        loadDefaultDrawableResource(drawableMDPIDir, "marker_default.png");
+        loadDefaultDrawableResource(drawableMDPIDir, "navto_small.png");
+        loadDefaultDrawableResource(drawableMDPIDir, "next.png");
+        loadDefaultDrawableResource(drawableMDPIDir, "person.png");
+        loadDefaultDrawableResource(drawableMDPIDir, "previous.png");
+        loadDefaultDrawableResource(drawableMDPIDir, "zoom_in.png");
+        loadDefaultDrawableResource(drawableMDPIDir, "zoom_out.png");
     }
 
     return true;

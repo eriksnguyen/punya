@@ -5,6 +5,7 @@
 
 package com.google.appinventor.components.runtime;
 
+import com.google.appinventor.components.runtime.util.MediaUtil;
 import com.google.appinventor.components.annotations.DesignerComponent;
 import com.google.appinventor.components.annotations.DesignerProperty;
 import com.google.appinventor.components.annotations.PropertyCategory;
@@ -302,7 +303,15 @@ public class OpenStreetMap extends AndroidViewComponent{
 
     @Override
     public Drawable getDrawable(final bitmap pResId) {
-      return new BitmapDrawable(getBitmap(pResId));
+      Drawable d;
+
+      try {
+        d = MediaUtil.getBitmapDrawable(form, "res/drawable/" + pResId.name());
+      } catch (IOException e) {
+        d = new BitmapDrawable(getBitmap(pResId));
+      }
+
+      return d;
     }
   }
 }
