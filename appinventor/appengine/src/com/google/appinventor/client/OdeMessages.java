@@ -6710,5 +6710,21 @@ public interface OdeMessages extends Messages {
     "function into the indefinite future.")
   @Description("")
   String firebaseExperimentalWarning();
+
+  @DefaultMessage("ZoomLevel")
+  @Description("")
+  String ZoomLevelProperties();
+
+  @DefaultMessage("EnableMarkers")
+  @Description("")
+  String EnableMarkersMethods();
+
+  @DefaultMessage("EnableFreeDrawnMarkers")
+  @Description("")
+  String EnableFreeDrawnMarkersMethods();
+
+  @DefaultMessage("EnableBingSatelliteImagery")
+  @Description("")
+  String EnableBingSatelliteImageryMethods();
 }
 

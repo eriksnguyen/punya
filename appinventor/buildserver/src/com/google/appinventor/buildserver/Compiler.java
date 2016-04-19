@@ -719,6 +719,12 @@ public final class Compiler {
     if (!compiler.prepareApplicationIcon(new File(drawableDir, "ya.png"))) {
       return false;
     }
+
+    // Include any necessary drawable items
+    out.println("________Preparing drawable items");
+    if (!compiler.prepareDrawableItems(drawableDir)) {
+      return false;
+    }
     setProgress(10);
 
     // Create anim directory and animation xml files
@@ -1234,6 +1240,51 @@ public final class Compiler {
         userErrors.print(String.format(ICON_ERROR, userSpecifiedIcon));
         return false;
       }
+    }
+
+    return true;
+  }
+
+  /*
+   * Loads drawable assets that different components may require by default.
+   */
+  private boolean prepareDrawableItems(final File drawableDir) {
+    // Add the drawable items necessary for OSMdroid
+    if (componentTypes.contains("OpenStreetMap")){
+        loadDefaultDrawableResource(drawableDir, "center.png");
+        loadDefaultDrawableResource(drawableDir, "direction_arrow.png");
+        loadDefaultDrawableResource(drawableDir, "marker_default_focused_base.png");
+        loadDefaultDrawableResource(drawableDir, "marker_default.png");
+        loadDefaultDrawableResource(drawableDir, "navto_small.png");
+        loadDefaultDrawableResource(drawableDir, "next.png");
+        loadDefaultDrawableResource(drawableDir, "person.png");
+        loadDefaultDrawableResource(drawableDir, "previous.png");
+        loadDefaultDrawableResource(drawableDir, "zoom_in.png");
+        loadDefaultDrawableResource(drawableDir, "zoom_out.png");
+    }
+
+    return true;
+  }
+
+  private boolean loadDefaultDrawableResource(final File drawableDir, final String resourceName) {
+    return loadDefaultDrawableResource(drawableDir, resourceName, RUNTIME_FILES_DIR);
+  }
+
+  /*
+   * Loads non-user submitted drawable assets
+   */
+  private boolean loadDefaultDrawableResource(final File drawableDir, final String resourceName, final String resourceLocation) {
+    try {
+      File outputPngFile = new File(drawableDir, resourceName);
+      BufferedImage image = ImageIO.read(Compiler.class.getResource(resourceLocation + resourceName));
+      if (image == null) {
+        throw new Exception("Missing required resource: " + resourceName);
+      }
+      ImageIO.write(image, "png", outputPngFile);
+    } catch (Exception e) {
+      e.printStackTrace();
+      // Without these resources, the osmdroid library will crash fatally
+      return false;
     }
 
     return true;

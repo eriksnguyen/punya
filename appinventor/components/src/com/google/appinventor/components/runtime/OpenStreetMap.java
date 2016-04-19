@@ -1,5 +1,4 @@
-// -*- mode: java; c-basic-offset: 2; -*-
-// Copyright 2009-2011 Google, All Rights reserved
+// -*- mode: java; c-basic-offset: 2; -*- // Copyright 2009-2011 Google, All Rights reserved
 // Copyright 2011-2012 MIT, All rights reserved
 // Released under the Apache License, Version 2.0
 // http://www.apache.org/licenses/LICENSE-2.0
@@ -7,6 +6,7 @@
 package com.google.appinventor.components.runtime;
 
 import com.google.appinventor.components.annotations.DesignerComponent;
+import com.google.appinventor.components.annotations.DesignerProperty;
 import com.google.appinventor.components.annotations.PropertyCategory;
 import com.google.appinventor.components.annotations.SimpleEvent;
 import com.google.appinventor.components.annotations.SimpleFunction;
@@ -26,14 +26,19 @@ import org.osmdroid.bonuspack.overlays.Polyline;
 import org.osmdroid.bonuspack.overlays.MapEventsReceiver;
 import org.osmdroid.bonuspack.overlays.MapEventsOverlay;
 import org.osmdroid.api.IMapController;
+import org.osmdroid.ResourceProxy;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 
 import android.app.Activity;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Environment;
@@ -44,6 +49,9 @@ import android.view.View;
 import android.widget.Toast;
 
 import java.io.File;
+import java.io.InputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -58,8 +66,10 @@ import java.util.concurrent.atomic.AtomicInteger;
     + "android.permission.ACCESS_NETWORK_STATE, "
     + "android.permission.INTERNET, "
     + "android.permission.WRITE_EXTERNAL_STORAGE")
-@UsesLibraries(libraries = "osmdroid-android.jar,osmbonuspack.jar,commons-lang.jar,gson-2.1.jar") // SLF4J not req for osmdroid v 5.0+
+@UsesLibraries(libraries = "slf4j-android.jar,osmdroid-android.jar,osmbonuspack.jar,commons-lang.jar,gson-2.1.jar") // SLF4J not req for osmdroid v 5.0+
 public class OpenStreetMap extends AndroidViewComponent{
+
+  private final int DEFAULT_ZOOM_LEVEL = 16;
 
   private final Activity context;
   private final Form form;
@@ -73,6 +83,8 @@ public class OpenStreetMap extends AndroidViewComponent{
   private android.widget.LinearLayout viewLayout;
 
   private MapView map;
+  private IMapController mapController;
+  private ResourceProxy customResourceProxy;
   private FolderOverlay markerOverlay;
   private org.osmdroid.views.MapView.LayoutParams mapParams;
 
@@ -118,15 +130,16 @@ public class OpenStreetMap extends AndroidViewComponent{
   * Initializes the map with default values
   */
   private void initializeMap() {
-    map = new MapView(context);
+    customResourceProxy = new CustomResourceProxy(context);
+    map = new MapView(context, 256, customResourceProxy);  // TODO: osmdroid 4.3 has bad resolution bug
     map.setTileSource(TileSourceFactory.MAPNIK);
     map.setBuiltInZoomControls(true);
     map.setMultiTouchControls(true);
 
     // Set starting point for map
     GeoPoint startPoint = new GeoPoint(42.3601, -71.0589);
-    IMapController mapController = map.getController();
-    mapController.setZoom(16);
+    mapController = map.getController();
+    mapController.setZoom(DEFAULT_ZOOM_LEVEL);
     mapController.setCenter(startPoint);
 
     // Set up the overlay so that the map can receive touch events
@@ -177,10 +190,11 @@ public class OpenStreetMap extends AndroidViewComponent{
   }
 
   private void drawMarker(GeoPoint p) {
-    Marker startMarker = new Marker(map);
+    //Toast.makeText(context, "Attempting to make a marker", Toast.LENGTH_SHORT).show();
+    Marker startMarker = new Marker(map, customResourceProxy);
     startMarker.setPosition(p);
     startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-    startMarker.setIcon(Drawable.createFromPath("./osm_images/marker_default.png"));
+    //startMarker.setIcon(Drawable.createFromPath("./osm_images/marker_default.png"));
     //startMarker.setInfoWindow(new AnnotationInfoWindow(R.layout.bonuspack_bubble, map));
     startMarker.setDraggable(true);
     markerOverlay.add(startMarker);
@@ -229,4 +243,66 @@ public class OpenStreetMap extends AndroidViewComponent{
     return viewLayout;
   }
 
+  @DesignerProperty 
+  @SimpleFunction (description = "Sets the zoom level of the map. Valid zoom levels span from 0 to 18 where 18 is most zoomed in.")
+  public void ZoomLevel(int zoom) {
+    mapController.setZoom(zoom);
+  }
+
+  @SimpleProperty (description = "Gets the current zoom level of the map")
+  public int ZoomLevel() {
+    return map.getZoomLevel();
+  }
+  
+  @SimpleFunction (description = "Sets tile source")
+  public void EnableBingSatelliteImagery(String bing_key) {
+    bing_key.toString();
+  }
+  
+  @SimpleFunction (description = "Enables Markers")
+  public void EnableMarkers(boolean enable) {
+  }
+
+  @SimpleFunction (description = "Enables FreeDrawnMarkers")
+  public void EnableFreeDrawnMarkers(boolean enable) {
+  }
+
+  private class CustomResourceProxy extends org.osmdroid.DefaultResourceProxyImpl {
+
+    private final Context mContext;
+    public CustomResourceProxy(Context pContext) {
+      super(pContext);
+      mContext = pContext;
+    }
+
+    @Override
+    public Bitmap getBitmap(final bitmap pResId) {
+      try {
+          int id = form.getResources().getIdentifier(pResId.name(), "drawable", form.getPackageName());
+          switch (pResId) {
+            case center:
+            case direction_arrow:
+            case marker_default:
+            case marker_default_focused_base:
+            case navto_small:
+            case next:
+            case previous:
+            case person:
+            case ic_menu_offline:
+            case ic_menu_mylocation:
+            case ic_menu_compass:
+            case ic_menu_mapmode: return BitmapFactory.decodeResource(form.getResources(), id);
+          }
+      } catch (final OutOfMemoryError ignore) {
+          Toast.makeText(context, "Exception: " + ignore.getMessage(), Toast.LENGTH_SHORT).show();
+      }
+      //return super.getBitmap(pResId);
+      return null;
+    }
+
+    @Override
+    public Drawable getDrawable(final bitmap pResId) {
+      return new BitmapDrawable(getBitmap(pResId));
+    }
+  }
 }

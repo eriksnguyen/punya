@@ -174,8 +174,8 @@
     <copy todir="${build.war.dir}/WEB-INF/lib" file="${lib.dir}/keyczar/keyczar-0.66-080111-java-1.6.jar" />
     <copy todir="${build.war.dir}/WEB-INF/lib" file="${lib.dir}/objectify-3.1/objectify-3.1.jar" />
     <copy todir="${build.war.dir}/WEB-INF/lib" file="${lib.dir}/gson/gson-2.1.jar" />  <!-- for keyczar -->
-    <copy todir="${build.war.dir}/WEB-INF/lib" file="${lib.dir}/osmdroid/osmdroid-android-5.1.jar" />
-    <copy todir="${build.war.dir}/WEB-INF/lib" file="${lib.dir}/osmdroid/osmbonuspack-v5.7.jar" />
+    <copy todir="${build.war.dir}/WEB-INF/lib" file="${lib.dir}/osmdroid/osmdroid-android-4.3.jar" />
+    <copy todir="${build.war.dir}/WEB-INF/lib" file="${lib.dir}/osmdroid/osmbonuspack-v5.1.jar" />
     <copy todir="${build.war.dir}/WEB-INF/lib" file="${lib.dir}/commons-lang/commons-lang3-3.4.jar" />
     <copy todir="${build.war.dir}/WEB-INF/lib" file="${lib.dir}/log4j/log4j-1.2.16.jar" />  <!-- for keyczar -->
     <!-- GCS Libs -->
