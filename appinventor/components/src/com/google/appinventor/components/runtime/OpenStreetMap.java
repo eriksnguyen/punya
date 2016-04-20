@@ -16,9 +16,12 @@ import com.google.appinventor.components.annotations.SimpleProperty;
 import com.google.appinventor.components.annotations.UsesLibraries;
 import com.google.appinventor.components.annotations.UsesPermissions;
 import com.google.appinventor.components.common.ComponentCategory;
+import com.google.appinventor.components.common.PropertyTypeConstants;
 import com.google.appinventor.components.common.YaVersion;
 import com.google.appinventor.components.runtime.util.ErrorMessages;
 
+import org.osmdroid.api.IGeoPoint;
+import org.osmdroid.api.IMapController;
 import org.osmdroid.bonuspack.overlays.FolderOverlay;
 import org.osmdroid.bonuspack.overlays.InfoWindow;
 import org.osmdroid.bonuspack.overlays.Marker;
@@ -26,7 +29,6 @@ import org.osmdroid.bonuspack.overlays.Polygon;
 import org.osmdroid.bonuspack.overlays.Polyline;
 import org.osmdroid.bonuspack.overlays.MapEventsReceiver;
 import org.osmdroid.bonuspack.overlays.MapEventsOverlay;
-import org.osmdroid.api.IMapController;
 import org.osmdroid.ResourceProxy;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
@@ -70,7 +72,21 @@ import java.util.concurrent.atomic.AtomicInteger;
 @UsesLibraries(libraries = "slf4j-android.jar,osmdroid-android.jar,osmbonuspack.jar,commons-lang.jar,gson-2.1.jar") // SLF4J not req for osmdroid v 5.0+
 public class OpenStreetMap extends AndroidViewComponent{
 
-  private final int DEFAULT_ZOOM_LEVEL = 16;
+  // Class defaults
+  private static final int     DEFAULT_ZOOM_LEVEL = 16;
+  private static final boolean DEFAULT_MARKERS_ENABLED = true;
+  private static final boolean DEFAULT_HAND_DRAWN_REGIONS_ENABLED = false;
+  private static final boolean DEFAULT_ZOOM_CONTROLS = true;
+  private static final boolean DEFAULT_MULTI_TOUCH_CONTROLS = true;
+  private static final double  DEFAULT_MAP_CENTER_LATITUDE = 42.3601; // Downtown Boston
+  private static final double  DEFAULT_MAP_CENTER_LONGITUDE = -71.0589; // Downtown Boston
+  private static final GeoPoint DEFAULT_MAP_CENTER = new GeoPoint(DEFAULT_MAP_CENTER_LATITUDE,
+                                                                  DEFAULT_MAP_CENTER_LONGITUDE);
+
+  private boolean markersEnabled = DEFAULT_MARKERS_ENABLED;
+  private boolean handDrawnRegionsEnabled = DEFAULT_HAND_DRAWN_REGIONS_ENABLED;
+  private boolean zoomControls = DEFAULT_ZOOM_CONTROLS;
+  private boolean multiTouchControls = DEFAULT_MULTI_TOUCH_CONTROLS;
 
   private final Activity context;
   private final Form form;
@@ -134,14 +150,13 @@ public class OpenStreetMap extends AndroidViewComponent{
     customResourceProxy = new CustomResourceProxy(context);
     map = new MapView(context, 256, customResourceProxy);  // TODO: osmdroid 4.3 has bad resolution bug
     map.setTileSource(TileSourceFactory.MAPNIK);
-    map.setBuiltInZoomControls(true);
-    map.setMultiTouchControls(true);
+    map.setBuiltInZoomControls(zoomControls);
+    map.setMultiTouchControls(multiTouchControls);
 
     // Set starting point for map
-    GeoPoint startPoint = new GeoPoint(42.3601, -71.0589);
     mapController = map.getController();
     mapController.setZoom(DEFAULT_ZOOM_LEVEL);
-    mapController.setCenter(startPoint);
+    mapController.setCenter(DEFAULT_MAP_CENTER);
 
     // Set up the overlay so that the map can receive touch events
     initializeEventReceiver();
@@ -244,28 +259,129 @@ public class OpenStreetMap extends AndroidViewComponent{
     return viewLayout;
   }
 
-  @DesignerProperty 
-  @SimpleFunction (description = "Sets the zoom level of the map. Valid zoom levels span from 0 to 18 where 18 is most zoomed in.")
+  @DesignerProperty (editorType = PropertyTypeConstants.PROPERTY_TYPE_INTEGER,
+    defaultValue = "16")
+  @SimpleProperty (description = "Sets the zoom level of the map. Valid zoom levels span from 0 to 18 where 18 is most zoomed in.")
   public void ZoomLevel(int zoom) {
     mapController.setZoom(zoom);
+    map.invalidate();
   }
 
   @SimpleProperty (description = "Gets the current zoom level of the map")
   public int ZoomLevel() {
     return map.getZoomLevel();
   }
-  
+
+  @DesignerProperty (editorType = PropertyTypeConstants.PROPERTY_TYPE_BOOLEAN,
+    defaultValue = "True")
+  @SimpleProperty (description = "Sets zoom controls")
+  public void ZoomControls(Boolean enable) {
+    zoomControls = enable;
+    map.setBuiltInZoomControls(zoomControls);
+    map.invalidate();
+  }
+
+  @SimpleProperty (description = "Gets zoom control settings")
+  public boolean ZoomControls() {
+    return zoomControls;
+  }
+
+  @DesignerProperty (editorType = PropertyTypeConstants.PROPERTY_TYPE_BOOLEAN,
+    defaultValue = "True")
+  @SimpleProperty (description = "Sets multi-touch controls")
+  public void MultiTouchControls(Boolean enable) {
+    multiTouchControls = enable;
+    map.setMultiTouchControls(multiTouchControls);
+    map.invalidate();
+  }
+
+  @SimpleProperty (description = "Gets multi-touch control settings")
+  public boolean MultiTouchControls() {
+    return multiTouchControls;
+  }
+
+  @DesignerProperty (editorType = PropertyTypeConstants.PROPERTY_TYPE_BOOLEAN,
+    defaultValue = "True")
+  @SimpleProperty (description = "Enables Markers")
+  public void MarkersEnabled(Boolean enable) {
+    markersEnabled = enable;
+    //TODO: do something
+  }
+
+  @SimpleProperty (description = "Returns whether markers are enabled")
+  public boolean MarkersEnabled() {
+    return markersEnabled;
+  }
+
+  @DesignerProperty (editorType = PropertyTypeConstants.PROPERTY_TYPE_BOOLEAN,
+    defaultValue = "False")
+  @SimpleProperty (description = "Enables HandDrawnRegions")
+  public void HandDrawnRegionsEnabled(Boolean enable) {
+    handDrawnRegionsEnabled = enable;
+    //TODO: do something
+  }
+
+  @SimpleProperty (description = "Returns whether HandDrawnRegions are enabled")
+  public boolean HandDrawnRegionsEnabled() {
+    return handDrawnRegionsEnabled;
+  }
+
+  @DesignerProperty (editorType = PropertyTypeConstants.PROPERTY_TYPE_FLOAT,
+    defaultValue = "-71.0589")
+  @SimpleProperty (description = "Sets the latitude of the center of the map")
+  public void MapCenterLongitude(double longitude) {
+    GeoPoint center = (GeoPoint) map.getMapCenter();
+    int currLongitude = center.getLongitudeE6();
+    int lon = (int) (longitude * 1E6);  // Convert from decimal to integer based coordinates
+    if (currLongitude != lon) {
+        center.setLongitudeE6(lon);
+        mapController.setCenter(center);
+        map.invalidate();
+    }
+  }
+
+  @SimpleProperty (description = "Gets the latitude of the center of the map")
+  public double MapCenterLongitude() {
+    return map.getMapCenter().getLongitude();
+  }
+
+  @DesignerProperty (editorType = PropertyTypeConstants.PROPERTY_TYPE_FLOAT,
+    defaultValue = "42.3601")
+  @SimpleProperty (description = "Sets the longitude of the center of the map")
+  public void MapCenterLatitude(double latitude) {
+    GeoPoint center = (GeoPoint) map.getMapCenter();
+    int currLatitude = center.getLatitudeE6();
+    int lat = (int) (latitude * 1E6);  // Convert from decimal to integer based coordinates
+    if (currLatitude != lat) {
+        center.setLatitudeE6(lat);
+        mapController.setCenter(center);
+        map.invalidate();
+    }
+  }
+
+  @SimpleProperty (description = "Gets the longitude of the center of the map")
+  public double MapCenterLatitude() {
+    return map.getMapCenter().getLatitude();
+  }
+
+  @SimpleFunction (description = "Sets the map center based on the given coordinates")
+  public void SetMapCenter(double latitude, double longitude) {
+    GeoPoint center = (GeoPoint) map.getMapCenter();
+    int currLatitude = center.getLatitudeE6();
+    int currLongitude = center.getLongitudeE6();
+    int lat = (int) (latitude * 1E6);
+    int lon = (int) (longitude * 1E6);
+    if ( currLatitude != lat || currLongitude != lon) {
+        center.setLatitudeE6(lat);
+        center.setLongitudeE6(lon);
+        mapController.setCenter(center);
+        map.invalidate();
+    }
+  }
+
   @SimpleFunction (description = "Sets tile source")
   public void EnableBingSatelliteImagery(String bing_key) {
     bing_key.toString();
-  }
-  
-  @SimpleFunction (description = "Enables Markers")
-  public void EnableMarkers(boolean enable) {
-  }
-
-  @SimpleFunction (description = "Enables FreeDrawnMarkers")
-  public void EnableFreeDrawnMarkers(boolean enable) {
   }
 
   private class CustomResourceProxy extends org.osmdroid.DefaultResourceProxyImpl {

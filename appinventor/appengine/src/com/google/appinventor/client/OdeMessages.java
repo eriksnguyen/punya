@@ -6715,13 +6715,33 @@ public interface OdeMessages extends Messages {
   @Description("")
   String ZoomLevelProperties();
 
-  @DefaultMessage("EnableMarkers")
+  @DefaultMessage("ZoomControls")
   @Description("")
-  String EnableMarkersMethods();
+  String ZoomControlsProperties();
 
-  @DefaultMessage("EnableFreeDrawnMarkers")
+  @DefaultMessage("MultiTouchControls")
   @Description("")
-  String EnableFreeDrawnMarkersMethods();
+  String MultiTouchControlsProperties();
+
+  @DefaultMessage("MarkersEnabled")
+  @Description("")
+  String MarkersEnabledProperties();
+
+  @DefaultMessage("HandDrawnRegionsEnabled")
+  @Description("")
+  String HandDrawnRegionsEnabledProperties();
+
+  @DefaultMessage("MapCenterLongitude")
+  @Description("")
+  String MapCenterLongitudeProperties();
+
+  @DefaultMessage("MapCenterLatitude")
+  @Description("")
+  String MapCenterLatitudeProperties();
+
+  @DefaultMessage("SetMapCenter")
+  @Description("")
+  String SetMapCenterMethods();
 
   @DefaultMessage("EnableBingSatelliteImagery")
   @Description("")
