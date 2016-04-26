@@ -6743,6 +6743,14 @@ public interface OdeMessages extends Messages {
   @Description("")
   String SetMapCenterMethods();
 
+  @DefaultMessage("SaveAnnotationsInKMLEnabled")
+  @Description("")
+  String SaveAnnotationsInKMLEnabledProperties();
+
+  @DefaultMessage("KMLSaveFilePath")
+  @Description("")
+  String KMLSaveFilePathProperties();
+
   @DefaultMessage("EnableBingSatelliteImagery")
   @Description("")
   String EnableBingSatelliteImageryMethods();

@@ -1259,6 +1259,7 @@ public final class Compiler {
         loadDefaultDrawableResource(drawableMDPIDir, "navto_small.png");
         loadDefaultDrawableResource(drawableMDPIDir, "next.png");
         loadDefaultDrawableResource(drawableMDPIDir, "person.png");
+        loadDefaultDrawableResource(drawableMDPIDir, "pen.png");
         loadDefaultDrawableResource(drawableMDPIDir, "previous.png");
         loadDefaultDrawableResource(drawableMDPIDir, "zoom_in.png");
         loadDefaultDrawableResource(drawableMDPIDir, "zoom_out.png");
