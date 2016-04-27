@@ -734,6 +734,13 @@ public final class Compiler {
       return false;
     }
     
+    // Create layout directory
+    out.println("________Creating layout xml");
+    File layoutDir = createDirectory(resDir, "layout");
+    if (!compiler.createLayoutXml(layoutDir)) {
+      return false;
+    }
+    
     // Create fragment directory and fragment xml files
     out.println("________Creating fragment xml");
     File fragmentDir = createDirectory(resDir, "layout");
@@ -1252,6 +1259,7 @@ public final class Compiler {
     // Add the drawable items necessary for OSMdroid
     File drawableMDPIDir = createDirectory(resDir, "drawable-mdpi");
     if (componentTypes.contains("OpenStreetMap")){
+        loadDefaultDrawableResource(drawableMDPIDir, "bonuspack_bubble.9.png");
         loadDefaultDrawableResource(drawableMDPIDir, "center.png");
         loadDefaultDrawableResource(drawableMDPIDir, "direction_arrow.png");
         loadDefaultDrawableResource(drawableMDPIDir, "marker_default_focused_base.png");
@@ -1287,6 +1295,23 @@ public final class Compiler {
       e.printStackTrace();
       // Without these resources, the osmdroid library will crash fatally
       return false;
+    }
+
+    return true;
+  }
+
+  // Puts any necessary files in res/layout
+  private boolean createLayoutXml(File layoutDir) {
+    Map<String, String> files = new HashMap<String, String>();
+    if (componentTypes.contains("OpenStreetMap")){
+      files.put("bonuspack_bubble.xml", OpenStreetMapXmlConstants.BONUSPACK_BUBBLE);
+    }
+
+    for (String filename : files.keySet()) {
+      File file = new File(layoutDir, filename);
+      if (!writeXmlFile(file, files.get(filename))) {
+        return false;
+      }
     }
 
     return true;

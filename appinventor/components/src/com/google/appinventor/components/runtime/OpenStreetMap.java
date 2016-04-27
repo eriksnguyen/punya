@@ -48,9 +48,12 @@ import android.net.Uri;
 import android.os.Environment;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -103,6 +106,8 @@ public class OpenStreetMap extends AndroidViewComponent{
 
   // Instance variables for logical operations
   private boolean penEnabled = false;
+  private AnnotationInfoWindow currentWindow = null;
+  private EditText annotationText;
 
   // Android classes
   private final Activity context;
@@ -139,8 +144,8 @@ public class OpenStreetMap extends AndroidViewComponent{
 
   private static final AtomicInteger sNextGeneratedId = new AtomicInteger(1);
 
-  // hash map to fake r.id for layout views
-  private final HashMap<String, Integer> viewIds = new HashMap<String, Integer>();
+  // hash map to fake r.id
+  private final HashMap<String, Integer> r_id = new HashMap<String, Integer>();
 
   // Display density
   private float DISPLAY_DENSITY;
@@ -169,6 +174,9 @@ public class OpenStreetMap extends AndroidViewComponent{
 
     // Programmatically set up the layout necessary for the component
     initializeView();
+
+    // Programmatically search for other r.id values that will be necessary
+    initializeRIDValues();
 
     container.$add(this);
     Width(LENGTH_FILL_PARENT);
@@ -204,7 +212,7 @@ public class OpenStreetMap extends AndroidViewComponent{
     mapEventsReceiver = new MapEventsReceiver() {
       @Override
       public boolean singleTapConfirmedHelper(GeoPoint p) {
-        Toast.makeText(context, "Tap on (" + p.getLatitude() + "," + p.getLongitude() + ")", Toast.LENGTH_SHORT).show();
+        //Toast.makeText(context, "Tap on (" + p.getLatitude() + "," + p.getLongitude() + ")", Toast.LENGTH_SHORT).show();
         InfoWindow.closeAllInfoWindowsOn(map);
         return true;
       }
@@ -371,7 +379,22 @@ public class OpenStreetMap extends AndroidViewComponent{
                            LinearLayout.LayoutParams.MATCH_PARENT,
                            LinearLayout.LayoutParams.WRAP_CONTENT));
              annotationText.setBackgroundColor(0xffffffff);
+             annotationText.addTextChangedListener(new TextWatcher() {
+               @Override
+               public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+               @Override
+               public void onTextChanged(CharSequence s, int start, int before, int count) {
+                 if (currentWindow == null)
+                    return;
+                 currentWindow.setDescriptionText(s.toString());
+               }
+
+               @Override
+               public void afterTextChanged(Editable s) {}
+             });
              setId(annotationText, "annotationText", generateViewId());
+             this.annotationText = annotationText;  // Persist a direct reference to this text box
 
     innerWrapper.addView(annotationText);
     innerAnnotationFrame.addView(innerWrapper);
@@ -381,13 +404,24 @@ public class OpenStreetMap extends AndroidViewComponent{
     viewLayout.addView(annotationFrame);
   }
 
+  private void initializeRIDValues() {
+    // Layout items
+    setId("bonuspack_bubble", form.getResources().getIdentifier("bonuspack_bubble", "layout", form.getPackageName()));
+    setId("bubble_layout", form.getResources().getIdentifier("bubble_layout", "id", form.getPackageName()));
+    setId("bubble_description", form.getResources().getIdentifier("bubble_description", "id", form.getPackageName()));
+  }
+
+  private void setId(String item, int id) {
+    r_id.put(item, id);
+  }
+
   private void setId(View view, String viewName, int id) {
     view.setId(id);
-    viewIds.put(viewName, id);
+    r_id.put(viewName, id);
   }
 
   private int getId(String viewName) {
-    return viewIds.get(viewName);
+    return r_id.get(viewName);
   }
 
   private int dpToPx(int dp) {
@@ -399,7 +433,7 @@ public class OpenStreetMap extends AndroidViewComponent{
     startMarker.setPosition(p);
     startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
     //startMarker.setIcon(Drawable.createFromPath("./osm_images/marker_default.png"));
-    //startMarker.setInfoWindow(new AnnotationInfoWindow(R.layout.bonuspack_bubble, map));
+    startMarker.setInfoWindow(new AnnotationInfoWindow(getId("bonuspack_bubble"), map));
     startMarker.setDraggable(true);
     markersOverlay.add(startMarker);
     map.invalidate();
@@ -647,4 +681,50 @@ public class OpenStreetMap extends AndroidViewComponent{
       return d;
     }
   }
+
+  private class AnnotationInfoWindow extends InfoWindow {
+    private final AnnotationInfoWindow thisWindow;
+
+    private LinearLayout layout;
+    private TextView txtDescription;
+
+    private boolean isOpen = true;
+
+    public AnnotationInfoWindow(int layoutResId, MapView mapView) {
+      super(layoutResId, mapView);
+      thisWindow = this;
+    }
+
+    public void onClose() {
+      isOpen = false;
+      View view = context.getWindow().getCurrentFocus();
+      if (view != null) {
+        InputMethodManager imm = (InputMethodManager) form.getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+      }
+
+      viewLayout.findViewById(getId("annotationFrame")).setVisibility(View.INVISIBLE);
+    }
+
+    public void setDescriptionText(String text) {
+      if(isOpen) {
+        txtDescription.setText(text);
+      }
+    }
+
+    public void onOpen(Object arg0) {
+      isOpen = true;
+      layout = (LinearLayout) mView.findViewById(getId("bubble_layout"));
+      txtDescription = (TextView) mView.findViewById(getId("bubble_description"));
+
+      layout.setOnClickListener(new View.OnClickListener() {
+          public void onClick(View v) {
+              currentWindow = thisWindow;
+              annotationText.setText(txtDescription.getText());
+              viewLayout.findViewById(getId("annotationFrame")).setVisibility(View.VISIBLE);
+          }
+      });
+    }
+  }
+
 }
