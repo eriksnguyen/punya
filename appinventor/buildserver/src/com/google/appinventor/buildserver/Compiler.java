@@ -110,6 +110,7 @@ public final class Compiler {
   // The Google Maps API Key is from the QCRI gmail account
   private static final String DEFAULT_GOOGLE_MAPS_API_KEY = "AIzaSyCmOh64wdlLf5Ay4hXo_1M-vDWerizaUrk";
 
+  private static final String DEFAULT_BING_KEY = "AkFtMqW9lQCw6fLKlS9we647Xt8FJ5EMzzPRPbRgRRJtXVuR_3fgkgk4cQPWTj48";
 
   private static final String COMPONENT_PERMISSIONS =
           RUNTIME_FILES_DIR + "simple_components_permissions.json";
@@ -375,6 +376,7 @@ public final class Compiler {
     String vName = (project.getVName() == null) ? DEFAULT_VERSION_NAME : cleanName(project.getVName());
     String aName = (project.getAName() == null) ? DEFAULT_APP_NAME : cleanName(project.getAName());
     String gMapsAPIKey = (project.getMapsKey() == null) ? DEFAULT_GOOGLE_MAPS_API_KEY : project.getMapsKey();
+    String bingKey = (project.getBingKey() == null ? DEFAULT_BING_KEY : project.getBingKey());
     String minSDK = DEFAULT_MIN_SDK;
 
     LOG.log(Level.INFO, "VCode: " + project.getVCode());
@@ -657,7 +659,13 @@ public final class Compiler {
       if (componentTypes.contains("GoogleMap")) {
         System.out.println("Android Manifest: including Google Maps key:" + gMapsAPIKey);
         out.write("<meta-data android:name=\"com.google.android.maps.v2.API_KEY\" ");
-        out.write("android:value=\"" + gMapsAPIKey + "\"/>");
+        out.write("android:value=\"" + gMapsAPIKey + "\"/>\n");
+      }
+
+      if (componentTypes.contains("OpenStreetMap")) {
+        System.out.println("Android Manifest: including Bing key:" + bingKey);
+        out.write("<meta-data android:name=\"BING_KEY\" ");
+        out.write("android:value=\"" + bingKey + "\"/>\n");
       }
 
       // Close the application tag

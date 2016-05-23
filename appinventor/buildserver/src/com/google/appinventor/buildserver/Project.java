@@ -82,6 +82,7 @@ public final class Project {
   private static final String BUILDTAG = "build";
   private static final String USESLOCATIONTAG = "useslocation";
   private static final String MAPKEY = "mapskey";
+  private static final String BINGKEY = "bingkey";
   private static final String ANAMETAG = "aname";
 
   // Table containing project properties
@@ -336,6 +337,14 @@ public final class Project {
       }
     }
     return sources;
+  }
+
+  public String getBingKey() {
+    return properties.getProperty(BINGKEY);
+  }
+
+  public void setBingKey(String key) {
+    properties.setProperty(BINGKEY, key);
   }
   
   public String getMapsKey() {

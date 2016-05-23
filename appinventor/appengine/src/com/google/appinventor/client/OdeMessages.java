@@ -6753,6 +6753,22 @@ public interface OdeMessages extends Messages {
 
   @DefaultMessage("EnableBingSatelliteImagery")
   @Description("")
-  String EnableBingSatelliteImageryMethods();
+  String EnableBingSatelliteImageryProperties();
+
+  @DefaultMessage("CenterMapOnGPSLocation")
+  @Description("")
+  String CenterMapOnGPSLocationProperties();
+
+  @DefaultMessage("GPSEnabled")
+  @Description("")
+  String GPSEnabledProperties();
+
+  @DefaultMessage("GPSTracingEnabled")
+  @Description("")
+  String GPSTracingEnabledProperties();
+
+  @DefaultMessage("MergeKMLDataFromFile")
+  @Description("")
+  String MergeKMLDataFromFileProperties();
 }
 

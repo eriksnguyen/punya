@@ -32,8 +32,11 @@ import org.osmdroid.bonuspack.overlays.MapEventsReceiver;
 import org.osmdroid.bonuspack.overlays.MapEventsOverlay;
 import org.osmdroid.ResourceProxy;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
+import org.osmdroid.tileprovider.tilesource.bing.BingMapTileSource;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
+import org.osmdroid.views.Projection;
+import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
 
 import android.app.Activity;
 import android.content.ContentValues;
@@ -42,6 +45,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -52,6 +56,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
@@ -67,8 +72,10 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -82,8 +89,12 @@ import java.util.concurrent.atomic.AtomicInteger;
     + "android.permission.ACCESS_NETWORK_STATE, "
     + "android.permission.INTERNET, "
     + "android.permission.WRITE_EXTERNAL_STORAGE")
-@UsesLibraries(libraries = "slf4j-android.jar,osmdroid-android.jar,osmbonuspack.jar,commons-lang.jar,gson-2.1.jar") // SLF4J not req for osmdroid v 5.0+
-public class OpenStreetMap extends AndroidViewComponent{
+@UsesLibraries(libraries = "slf4j-android.jar,"
+    + "osmdroid-android.jar,"
+    + "osmdroid-third-party.jar,"
+    + "osmbonuspack.jar,"
+    + "commons-lang.jar,gson-2.1.jar") // SLF4J not req for osmdroid v 5.0+
+public class OpenStreetMap extends AndroidViewComponent implements OnResumeListener, OnPauseListener {
 
   // Class defaults
   private static final int     DEFAULT_ZOOM_LEVEL = 16;
@@ -108,6 +119,8 @@ public class OpenStreetMap extends AndroidViewComponent{
   private boolean penEnabled = false;
   private AnnotationInfoWindow currentWindow = null;
   private EditText annotationText;
+  private final ArrayList<GeoPoint> newHandDrawnRegion_Points = new ArrayList<GeoPoint>();
+  private final ArrayList<GeoPoint> EMPTY_LIST = new ArrayList<GeoPoint>(0);
 
   // Android classes
   private final Activity context;
@@ -132,11 +145,14 @@ public class OpenStreetMap extends AndroidViewComponent{
   // Overlays that can be added to the map
   private FolderOverlay markersOverlay;           // Overlay that holds the markers for the map
   private FolderOverlay handDrawnRegionsOverlay;  // Overlay that holds the regions drawn
+  private Polyline newHandDrawnRegion_Perimeter;  // Overlay that displays a new hand drawn region as the user is drawing it
   private MapEventsOverlay mapEventsOverlay;      // Overlay that handles sensing map events (presses) in the background
+
 
   // KML files used for saves
   private String KMLFilePath = "";
-  private KmlDocument saveDocument = null;
+  private KmlDocument saveDocument = new KmlDocument();
+  private FolderOverlay kmlOverlay = null;
 
   // translates App Inventor alignment codes to Android gravity
   // private final AlignmentUtil alignmentSetter;
@@ -181,6 +197,8 @@ public class OpenStreetMap extends AndroidViewComponent{
     container.$add(this);
     Width(LENGTH_FILL_PARENT);
     Height(LENGTH_FILL_PARENT);
+    form.registerForOnResume(this);
+    form.registerForOnPause(this);
   }
 
   /*
@@ -235,11 +253,26 @@ public class OpenStreetMap extends AndroidViewComponent{
   }
 
   private void initializeOverlays() {
+    // Overlay for Markers
     markersOverlay = new FolderOverlay(context);
     map.getOverlays().add(markersOverlay);
 
+    // Overlays for handDrawnRegions
     handDrawnRegionsOverlay = new FolderOverlay(context);
     map.getOverlays().add(handDrawnRegionsOverlay);
+
+    newHandDrawnRegion_Perimeter = new Polyline(context);
+    map.getOverlays().add(newHandDrawnRegion_Perimeter);
+
+
+    // Overlay for GPS location
+//    MyLocationNewOverlay myLocation= new MyLocationNewOverlay(context, map);
+//    myLocation.enableMyLocation();
+
+//    map.getOverlays().add(myLocation);
+
+    // TODO: Overlay for GPS Trace
+
 
     // Ensure that it is the lowest overlay level because this is the fallback
     // that is used to capture events that aren't taken by other overlay items
@@ -317,6 +350,40 @@ public class OpenStreetMap extends AndroidViewComponent{
                          FrameLayout.LayoutParams.MATCH_PARENT,
                          FrameLayout.LayoutParams.MATCH_PARENT));
                 drawFrame.setVisibility(handDrawnRegionsEnabled ? View.VISIBLE : View.INVISIBLE);
+                drawFrame.setOnTouchListener(new View.OnTouchListener() {
+                  @Override
+                  public boolean onTouch(View v, MotionEvent event) {
+                      if (!penEnabled || !handDrawnRegionsEnabled)
+                          return false;
+
+                      float x = event.getX();
+                      float y = event.getY();
+
+                      int x_co = Math.round(x);
+                      int y_co = Math.round(y);
+
+                      GeoPoint x_y_points = (GeoPoint) map.getProjection().fromPixels(x_co, y_co);
+                      int eventaction = event.getAction();
+                      switch (eventaction) {
+                          case MotionEvent.ACTION_DOWN:
+                              // finger touches the screen
+                          case MotionEvent.ACTION_MOVE:
+                              // finger moves on the screen
+                              newHandDrawnRegion_Points.add(x_y_points);
+                              newHandDrawnRegion_Perimeter.setPoints(newHandDrawnRegion_Points);
+                              map.invalidate();
+                              break;
+                          case MotionEvent.ACTION_UP:
+                              // finger leaves the screen
+                              newHandDrawnRegion_Perimeter.setPoints(EMPTY_LIST);
+                              drawNewHandDrawnRegion();
+                              newHandDrawnRegion_Points.clear();
+                              break;
+                      }
+
+                      return true;
+                  }
+                });
                 setId(drawFrame, "drawFrame", generateViewId());
 
     // set up the pen button
@@ -432,10 +499,20 @@ public class OpenStreetMap extends AndroidViewComponent{
     Marker startMarker = new Marker(map, customResourceProxy);
     startMarker.setPosition(p);
     startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-    //startMarker.setIcon(Drawable.createFromPath("./osm_images/marker_default.png"));
     startMarker.setInfoWindow(new AnnotationInfoWindow(getId("bonuspack_bubble"), map));
     startMarker.setDraggable(true);
     markersOverlay.add(startMarker);
+    map.invalidate();
+  }
+
+  public void drawNewHandDrawnRegion() {
+    Polygon poly = new Polygon(context);
+    poly.setPoints(newHandDrawnRegion_Points);
+    poly.setFillColor(0x12121212);
+    poly.setStrokeColor(Color.RED);
+    poly.setStrokeWidth(5);
+    poly.setInfoWindow(new AnnotationInfoWindow(getId("bonuspack_bubble"), map));
+    handDrawnRegionsOverlay.add(poly);
     map.invalidate();
   }
 
@@ -456,6 +533,21 @@ public class OpenStreetMap extends AndroidViewComponent{
       }
     }
   }
+
+
+  @Override
+  public void onResume() {
+    Log.i(TAG, "in onResume...OpenStreetMap redraw");
+
+  }
+
+
+  @Override
+  public void onPause() {
+    Log.i(TAG, "in onResume...OpenStreetMap");
+
+  }
+
 
   //  Currently this doesn't work
   @Override
@@ -495,7 +587,7 @@ public class OpenStreetMap extends AndroidViewComponent{
   }
 
   @DesignerProperty (editorType = PropertyTypeConstants.PROPERTY_TYPE_BOOLEAN,
-    defaultValue = "True")
+    defaultValue = "False")
   @SimpleProperty (description = "Sets zoom controls")
   public void ZoomControls(Boolean enable) {
     zoomControlsEnabled = enable;
@@ -572,6 +664,30 @@ public class OpenStreetMap extends AndroidViewComponent{
     return map.getMapCenter().getLongitude();
   }
 
+  @DesignerProperty (editorType = PropertyTypeConstants.PROPERTY_TYPE_BOOLEAN,
+    defaultValue = "False")
+  @SimpleProperty (description = "Centers the Map")
+  public void CenterMapOnGPSLocation(boolean enable){
+  }
+
+  @DesignerProperty (editorType = PropertyTypeConstants.PROPERTY_TYPE_BOOLEAN,
+    defaultValue = "False")
+  @SimpleProperty (description = "Enable GPS")
+  public void GPSEnabled(boolean enable){
+  }
+
+  @DesignerProperty (editorType = PropertyTypeConstants.PROPERTY_TYPE_BOOLEAN,
+    defaultValue = "False")
+  @SimpleProperty (description = "Enable GPS Tracing")
+  public void GPSTracingEnabled(boolean enable){
+  }
+
+  @DesignerProperty (editorType = PropertyTypeConstants.PROPERTY_TYPE_STRING,
+    defaultValue = "")
+  @SimpleProperty (description = "Sets the kml file for merging")
+  public void MergeKMLDataFromFile(String filePath) {
+  }
+
   @DesignerProperty (editorType = PropertyTypeConstants.PROPERTY_TYPE_FLOAT,
     defaultValue = "42.3601")
   @SimpleProperty (description = "Sets the longitude of the center of the map")
@@ -618,11 +734,19 @@ public class OpenStreetMap extends AndroidViewComponent{
     return saveAnnotationsInKMLEnabled;
   }
 
+  private final File SDCARD = Environment.getExternalStorageDirectory();
   @DesignerProperty (editorType = PropertyTypeConstants.PROPERTY_TYPE_STRING,
-    defaultValue = "")
+    defaultValue = "data.kml")
   @SimpleProperty (description = "Sets the kml file for saves if saving is enabled")
   public void KMLSaveFilePath(String filePath) {
     KMLFilePath = filePath;
+    File file = new File(SDCARD, filePath);
+    boolean ok = saveDocument.parseKMLFile(file);
+    Toast.makeText(context, "?: " + ok, Toast.LENGTH_SHORT).show();
+    if (ok) {
+      kmlOverlay = (FolderOverlay) saveDocument.mKmlRoot.buildOverlay(map, null, null, saveDocument);
+      Toast.makeText(context, "Okay Build", Toast.LENGTH_SHORT).show();
+    }
   }
 
   @SimpleProperty (description = "Gets the kml file for saves if saving is enabled")
@@ -630,9 +754,22 @@ public class OpenStreetMap extends AndroidViewComponent{
     return KMLFilePath;
   }
 
-  @SimpleFunction (description = "Sets tile source")
+  @DesignerProperty (editorType = PropertyTypeConstants.PROPERTY_TYPE_STRING,
+    defaultValue = "")
+  @SimpleProperty (description = "Sets tile source")
   public void EnableBingSatelliteImagery(String bing_key) {
-    bing_key.toString();
+    try {
+      BingMapTileSource.retrieveBingKey(context);
+      Toast.makeText(context, BingMapTileSource.getBingKey(), Toast.LENGTH_SHORT).show();
+      String m_locale = Locale.getDefault().getDisplayName();
+            Toast.makeText(context, m_locale, Toast.LENGTH_SHORT).show();
+      //BingMapTileSource bing = new BingMapTileSource(m_locale);
+      //bing.setStyle(BingMapTileSource.IMAGERYSET_AERIAL);
+      //map.setTileSource(bing);
+    } catch (Exception e) {
+      e.printStackTrace();
+      map.setTileSource(TileSourceFactory.MAPNIK);
+    }
   }
 
   private class CustomResourceProxy extends org.osmdroid.DefaultResourceProxyImpl {
