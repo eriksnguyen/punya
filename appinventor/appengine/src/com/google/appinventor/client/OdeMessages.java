@@ -6730,5 +6730,65 @@ public interface OdeMessages extends Messages {
     "function into the indefinite future.")
   @Description("")
   String firebaseExperimentalWarning();
+
+  @DefaultMessage("ZoomLevel")
+  @Description("")
+  String ZoomLevelProperties();
+
+  @DefaultMessage("ZoomControls")
+  @Description("")
+  String ZoomControlsProperties();
+
+  @DefaultMessage("MultiTouchControls")
+  @Description("")
+  String MultiTouchControlsProperties();
+
+  @DefaultMessage("MarkersEnabled")
+  @Description("")
+  String MarkersEnabledProperties();
+
+  @DefaultMessage("HandDrawnRegionsEnabled")
+  @Description("")
+  String HandDrawnRegionsEnabledProperties();
+
+  @DefaultMessage("MapCenterLongitude")
+  @Description("")
+  String MapCenterLongitudeProperties();
+
+  @DefaultMessage("MapCenterLatitude")
+  @Description("")
+  String MapCenterLatitudeProperties();
+
+  @DefaultMessage("SetMapCenter")
+  @Description("")
+  String SetMapCenterMethods();
+
+  @DefaultMessage("SaveAnnotationsInKMLEnabled")
+  @Description("")
+  String SaveAnnotationsInKMLEnabledProperties();
+
+  @DefaultMessage("KMLSaveFilePath")
+  @Description("")
+  String KMLSaveFilePathProperties();
+
+  @DefaultMessage("EnableBingSatelliteImagery")
+  @Description("")
+  String EnableBingSatelliteImageryProperties();
+
+  @DefaultMessage("CenterMapOnGPSLocation")
+  @Description("")
+  String CenterMapOnGPSLocationProperties();
+
+  @DefaultMessage("GPSEnabled")
+  @Description("")
+  String GPSEnabledProperties();
+
+  @DefaultMessage("GPSTracingEnabled")
+  @Description("")
+  String GPSTracingEnabledProperties();
+
+  @DefaultMessage("MergeKMLDataFromFile")
+  @Description("")
+  String MergeKMLDataFromFileProperties();
 }
 

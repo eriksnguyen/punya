@@ -512,7 +512,20 @@ public interface Images extends Resources {
   */
   @Source("com/google/appinventor/images/gmapBig.png")
   ImageResource googleMapBig();
-  
+
+  /**
+  * Designer palette item: OpenStreetMap component
+  */
+  @Source("com/google/appinventor/images/osm.png")
+  ImageResource openStreetMap();
+
+  /**
+  * Designer item: OpenStreetMap component in designer
+  *
+  */
+  @Source("com/google/appinventor/images/osmBig.png")
+  ImageResource openStreetMapBig();
+
   /**
   * Designer palette item: Graph component
   */

@@ -110,6 +110,7 @@ public final class Compiler {
   // The Google Maps API Key is from the QCRI gmail account
   private static final String DEFAULT_GOOGLE_MAPS_API_KEY = "AIzaSyCmOh64wdlLf5Ay4hXo_1M-vDWerizaUrk";
 
+  private static final String DEFAULT_BING_KEY = "AkFtMqW9lQCw6fLKlS9we647Xt8FJ5EMzzPRPbRgRRJtXVuR_3fgkgk4cQPWTj48";
 
   private static final String COMPONENT_PERMISSIONS =
           RUNTIME_FILES_DIR + "simple_components_permissions.json";
@@ -375,6 +376,7 @@ public final class Compiler {
     String vName = (project.getVName() == null) ? DEFAULT_VERSION_NAME : cleanName(project.getVName());
     String aName = (project.getAName() == null) ? DEFAULT_APP_NAME : cleanName(project.getAName());
     String gMapsAPIKey = (project.getMapsKey() == null) ? DEFAULT_GOOGLE_MAPS_API_KEY : project.getMapsKey();
+    String bingKey = (project.getBingKey() == null ? DEFAULT_BING_KEY : project.getBingKey());
     String minSDK = DEFAULT_MIN_SDK;
 
     LOG.log(Level.INFO, "VCode: " + project.getVCode());
@@ -657,7 +659,13 @@ public final class Compiler {
       if (componentTypes.contains("GoogleMap")) {
         System.out.println("Android Manifest: including Google Maps key:" + gMapsAPIKey);
         out.write("<meta-data android:name=\"com.google.android.maps.v2.API_KEY\" ");
-        out.write("android:value=\"" + gMapsAPIKey + "\"/>");
+        out.write("android:value=\"" + gMapsAPIKey + "\"/>\n");
+      }
+
+      if (componentTypes.contains("OpenStreetMap")) {
+        System.out.println("Android Manifest: including Bing key:" + bingKey);
+        out.write("<meta-data android:name=\"BING_KEY\" ");
+        out.write("android:value=\"" + bingKey + "\"/>\n");
       }
 
       // Close the application tag
@@ -719,12 +727,25 @@ public final class Compiler {
     if (!compiler.prepareApplicationIcon(new File(drawableDir, "ya.png"))) {
       return false;
     }
+
+    // Include any necessary drawable items
+    out.println("________Preparing drawable items");
+    if (!compiler.prepareDrawableItems(resDir)) {
+      return false;
+    }
     setProgress(10);
 
     // Create anim directory and animation xml files
     out.println("________Creating animation xml");
     File animDir = createDirectory(resDir, "anim");
     if (!compiler.createAnimationXml(animDir)) {
+      return false;
+    }
+    
+    // Create layout directory
+    out.println("________Creating layout xml");
+    File layoutDir = createDirectory(resDir, "layout");
+    if (!compiler.createLayoutXml(layoutDir)) {
       return false;
     }
     
@@ -1232,6 +1253,71 @@ public final class Compiler {
       // If the user specified the icon, this is fatal.
       if (!userSpecifiedIcon.isEmpty()) {
         userErrors.print(String.format(ICON_ERROR, userSpecifiedIcon));
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /*
+   * Loads drawable assets that different components may require by default.
+   */
+  private boolean prepareDrawableItems(final File resDir) {
+    // Add the drawable items necessary for OSMdroid
+    File drawableMDPIDir = createDirectory(resDir, "drawable-mdpi");
+    if (componentTypes.contains("OpenStreetMap")){
+        loadDefaultDrawableResource(drawableMDPIDir, "bonuspack_bubble.9.png");
+        loadDefaultDrawableResource(drawableMDPIDir, "center.png");
+        loadDefaultDrawableResource(drawableMDPIDir, "direction_arrow.png");
+        loadDefaultDrawableResource(drawableMDPIDir, "marker_default_focused_base.png");
+        loadDefaultDrawableResource(drawableMDPIDir, "marker_default.png");
+        loadDefaultDrawableResource(drawableMDPIDir, "navto_small.png");
+        loadDefaultDrawableResource(drawableMDPIDir, "next.png");
+        loadDefaultDrawableResource(drawableMDPIDir, "person.png");
+        loadDefaultDrawableResource(drawableMDPIDir, "pen.png");
+        loadDefaultDrawableResource(drawableMDPIDir, "previous.png");
+        loadDefaultDrawableResource(drawableMDPIDir, "zoom_in.png");
+        loadDefaultDrawableResource(drawableMDPIDir, "zoom_out.png");
+    }
+
+    return true;
+  }
+
+  private boolean loadDefaultDrawableResource(final File drawableDir, final String resourceName) {
+    return loadDefaultDrawableResource(drawableDir, resourceName, RUNTIME_FILES_DIR);
+  }
+
+  /*
+   * Loads non-user submitted drawable assets
+   */
+  private boolean loadDefaultDrawableResource(final File drawableDir, final String resourceName, final String resourceLocation) {
+    try {
+      File outputPngFile = new File(drawableDir, resourceName);
+      BufferedImage image = ImageIO.read(Compiler.class.getResource(resourceLocation + resourceName));
+      if (image == null) {
+        throw new Exception("Missing required resource: " + resourceName);
+      }
+      ImageIO.write(image, "png", outputPngFile);
+    } catch (Exception e) {
+      e.printStackTrace();
+      // Without these resources, the osmdroid library will crash fatally
+      return false;
+    }
+
+    return true;
+  }
+
+  // Puts any necessary files in res/layout
+  private boolean createLayoutXml(File layoutDir) {
+    Map<String, String> files = new HashMap<String, String>();
+    if (componentTypes.contains("OpenStreetMap")){
+      files.put("bonuspack_bubble.xml", OpenStreetMapXmlConstants.BONUSPACK_BUBBLE);
+    }
+
+    for (String filename : files.keySet()) {
+      File file = new File(layoutDir, filename);
+      if (!writeXmlFile(file, files.get(filename))) {
         return false;
       }
     }

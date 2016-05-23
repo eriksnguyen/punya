@@ -139,6 +139,7 @@ public final class SimpleComponentDescriptor {
     bundledImages.put("images/googleCloudMessaging.png", images.googleCloudMessaging()); 
     bundledImages.put("images/voting.png", images.voting());
     bundledImages.put("images/gmap.png", images.googlemap());
+    bundledImages.put("images/osm.png", images.openStreetMap());
     bundledImages.put("images/web.png", images.web());
     bundledImages.put("images/wifiProbe.png", images.wifiSensor());
     bundledImages.put("images/proximity.png", images.proximitysensor());
@@ -371,6 +372,8 @@ public final class SimpleComponentDescriptor {
       return new MockGoogleMap(editor);
     } else if (name.equals(MockSpinner.TYPE)) {
       return new MockSpinner(editor);
+    } else if (name.equals(MockOpenStreetMap.TYPE)) {
+      return new MockOpenStreetMap(editor);
     }
       else {
       // TODO(user): add 3rd party mock component proxy here

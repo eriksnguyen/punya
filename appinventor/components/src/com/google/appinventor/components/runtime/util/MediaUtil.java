@@ -45,7 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class MediaUtil {
 
-  private enum MediaSource { ASSET, REPL_ASSET, SDCARD, FILE_URL, URL, CONTENT_URI, CONTACT_URI }
+  private enum MediaSource { ASSET, REPL_ASSET, SDCARD, FILE_URL, URL, CONTENT_URI, CONTACT_URI, RES }
 
   private static final String LOG_TAG = "MediaUtil";
   private static final String REPL_ASSET_DIR = "/sdcard/AppInventor/assets/";
@@ -100,6 +100,8 @@ public class MediaUtil {
 
     } else if (mediaPath.startsWith("content://")) {
       return MediaSource.CONTENT_URI;
+    } else if (mediaPath.startsWith("res/")) {
+      return MediaSource.RES;
     }
 
     try {
@@ -190,6 +192,11 @@ public class MediaUtil {
 
       case REPL_ASSET:
         return new FileInputStream(replAssetPath(mediaPath));
+
+      case RES:
+        File media = new File(mediaPath);
+        int id = form.getResources().getIdentifier(media.getName(), media.getParentFile().getName(), form.getPackageName());
+        return form.getResources().openRawResource(id);
 
       case SDCARD:
         return new FileInputStream(mediaPath);
